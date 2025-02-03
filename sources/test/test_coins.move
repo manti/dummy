@@ -5,9 +5,9 @@ module test_coin::test_coins {
     use std::signer;
 
     struct TestWARP {}
-    struct TestMUSD {}
+    struct TestBUSD {}
     struct TestUSDC {}
-    struct TestMOVE {}
+    struct TestBNB {}
     struct TestAPT {}
 
     public entry fun init_coins(): signer {
@@ -16,15 +16,15 @@ module test_coin::test_coins {
         // init coins
         managed_coin::initialize<TestWARP>(
             &account,
-            b"Warp",
-            b"WARP",
+            b"Cake",
+            b"CAKE",
             9,
             false,
         );
-        managed_coin::initialize<TestMUSD>(
+        managed_coin::initialize<TestBUSD>(
             &account,
-            b"Musd",
-            b"MUSD",
+            b"Busd",
+            b"BUSD",
             9,
             false,
         );
@@ -37,10 +37,10 @@ module test_coin::test_coins {
             false,
         );
 
-        managed_coin::initialize<TestMOVE>(
+        managed_coin::initialize<TestBNB>(
             &account,
-            b"MOVE",
-            b"MOVE",
+            b"BNB",
+            b"BNB",
             9,
             false,
         );
