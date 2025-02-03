@@ -691,7 +691,7 @@ module warpgate::swap_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
         let output_y = 166319299;
-        let output_x = 166319299;
+        let output_x = output_y / 2; // Since Y:X reserve ratio is 2:1
         // let input_x_max = 1 * pow(10, 8);
 
         // bob provider liquidity for 5:10 CAKE-BUSD

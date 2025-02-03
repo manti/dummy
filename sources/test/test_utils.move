@@ -48,7 +48,10 @@ module warpgate::test_utils {
         reserve_x: u64,
         reserve_y: u64
     ): u128 {
-        ((input_x as u128) * 9975u128 * (reserve_y as u128)) / (((reserve_x as u128) * 10000u128) + ((input_x as u128) * 9975u128))
+        // Account for both swap fee (0.25%) and market maker fee (0.1%)
+        // Total fee is 0.35%, so multiplier is (1 - 0.0035) = 0.9965
+        // 9965 = 10000 - 25 - 10 (swap fee and market maker fee)
+        ((input_x as u128) * 9965u128 * (reserve_y as u128)) / (((reserve_x as u128) * 10000u128) + ((input_x as u128) * 9965u128))
     }
 
     public fun calc_input_using_output(
@@ -56,7 +59,10 @@ module warpgate::test_utils {
         reserve_x: u64,
         reserve_y: u64
     ): u128 {
-        ((output_y as u128) * 10000u128 * (reserve_x as u128)) / (9975u128 * ((reserve_y as u128) - (output_y as u128))) + 1u128
+        // Account for both swap fee (0.25%) and market maker fee (0.1%)
+        // Total fee is 0.35%, so multiplier is (1 - 0.0035) = 0.9965
+        // 9965 = 10000 - 25 - 10 (swap fee and market maker fee)
+        ((output_y as u128) * 10000u128 * (reserve_x as u128)) / (9965u128 * ((reserve_y as u128) - (output_y as u128))) + 1u128
     }
 
     public fun calc_fee_lp(

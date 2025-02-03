@@ -47,6 +47,7 @@ module warpgate::swap {
     const ERROR_NO_FEE_WITHDRAW: u64 = 21;
 
     const PRECISION: u64 = 10000;
+    const MARKET_MAKER_FEE: u128 = 100; // 0.1% market maker fee
 
     // Add new error codes
     const ERROR_INVALID_FEE: u64 = 22;
@@ -78,6 +79,10 @@ module warpgate::swap {
         freeze_cap: coin::FreezeCapability<LPToken<X, Y>>,
         /// swap fee in basis points (e.g., 25 = 0.25%)
         swap_fee: u128,
+        /// accumulated market maker fees for token X
+        market_maker_fee_x: u64,
+        /// accumulated market maker fees for token Y
+        market_maker_fee_y: u64,
     }
 
     /// Stores the reservation info required for the token pairs
@@ -144,7 +149,7 @@ module warpgate::swap {
         let resource_signer = account::create_signer_with_capability(&signer_cap);
         move_to(&resource_signer, SwapInfo {
             signer_cap,
-            fee_to: ZERO_ACCOUNT,
+            fee_to: DEFAULT_ADMIN,
             admin: DEFAULT_ADMIN,
             pair_created: account::new_event_handle<PairCreatedEvent>(&resource_signer),
         });
@@ -202,6 +207,8 @@ module warpgate::swap {
                 burn_cap,
                 freeze_cap,
                 swap_fee, // Initialize with provided fee
+                market_maker_fee_x: 0,
+                market_maker_fee_y: 0,
             }
         );
 
@@ -559,8 +566,22 @@ module warpgate::swap {
 
         let prec = (PRECISION as u128);
 
-        let balance_x_adjusted = (balance_x as u128) * prec - (amount_x_in as u128) * fee;
-        let balance_y_adjusted = (balance_y as u128) * prec - (amount_y_in as u128) * fee;
+        // Calculate and accumulate market maker fees
+        if (amount_x_in > 0) {
+            let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
+            let mm_fee_x = ((amount_x_in as u128) * MARKET_MAKER_FEE / 10000u128) as u64;
+            metadata.market_maker_fee_x = metadata.market_maker_fee_x + mm_fee_x;
+        };
+        if (amount_y_in > 0) {
+            let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
+            let mm_fee_y = ((amount_y_in as u128) * MARKET_MAKER_FEE / 10000u128) as u64;
+            metadata.market_maker_fee_y = metadata.market_maker_fee_y + mm_fee_y;
+        };
+
+        // Adjust balances using only swap fee (without market maker fee)
+        let swap_fee_only = fee - MARKET_MAKER_FEE;
+        let balance_x_adjusted = (balance_x as u128) * prec - (amount_x_in as u128) * swap_fee_only;
+        let balance_y_adjusted = (balance_y as u128) * prec - (amount_y_in as u128) * swap_fee_only;
         
         let reserve_x_adjusted = (reserves.reserve_x as u128) * prec;
         let reserve_y_adjusted = (reserves.reserve_y as u128) * prec;
@@ -622,10 +643,12 @@ module warpgate::swap {
 
         let fee_amount = mint_fee<X, Y>(reserves.reserve_x, reserves.reserve_y, metadata);
 
-        //Need to add fee amount which have not been mint.
+        // Subtract market maker fees from balances before calculating user's share
+        let adjusted_balance_x = (balance_x as u128) - (metadata.market_maker_fee_x as u128);
+        let adjusted_balance_y = (balance_y as u128) - (metadata.market_maker_fee_y as u128);
         let total_lp_supply = total_lp_supply<X, Y>();
-        let amount_x = ((balance_x as u128) * (liquidity as u128) / (total_lp_supply as u128) as u64);
-        let amount_y = ((balance_y as u128) * (liquidity as u128) / (total_lp_supply as u128) as u64);
+        let amount_x = (adjusted_balance_x * (liquidity as u128) / (total_lp_supply as u128) as u64);
+        let amount_y = (adjusted_balance_y * (liquidity as u128) / (total_lp_supply as u128) as u64);
         assert!(amount_x > 0 && amount_y > 0, ERROR_INSUFFICIENT_LIQUIDITY_BURNED);
 
         coin::burn<LPToken<X, Y>>(lp_tokens, &metadata.burn_cap);
@@ -693,18 +716,36 @@ module warpgate::swap {
             let root_k = math::sqrt((reserve_x as u128) * (reserve_y as u128));
             let root_k_last = math::sqrt(metadata.k_last);
             if (root_k > root_k_last) {
-                let numerator = total_lp_supply<X, Y>() * (root_k - root_k_last) * 8u128;
-                let denominator = root_k_last * 17u128 + (root_k * 8u128);
-                let liquidity = numerator / denominator;
-                fee = (liquidity as u64);
-                // record fee amount in metadata, in case of fee_to with register.
+                // Calculate LP tokens for swap fees (0.25%)
+                let swap_fee_numerator = total_lp_supply<X, Y>() * (root_k - root_k_last) * 8u128;
+                let swap_fee_denominator = root_k_last * 17u128 + (root_k * 8u128);
+                let swap_fee_liquidity = swap_fee_numerator / swap_fee_denominator;
+                // Calculate LP tokens for market maker fees (0.1%)
+                let mm_fee_x = metadata.market_maker_fee_x;
+                let mm_fee_y = metadata.market_maker_fee_y;
+                let mm_fee_liquidity = if (mm_fee_x > 0 || mm_fee_y > 0) {
+                    let total_supply = total_lp_supply<X, Y>();
+                    math::min(
+                        (mm_fee_x as u128) * total_supply / (reserve_x as u128),
+                        (mm_fee_y as u128) * total_supply / (reserve_y as u128)
+                    )
+                } else {
+                    0u128
+                };
+                // Combine both fees
+                fee = ((swap_fee_liquidity + mm_fee_liquidity) as u64);
+                // Record fee amount in metadata and reset market maker fees
                 if (fee > 0) {
                     let coin = mint_lp(fee, &metadata.mint_cap);
                     coin::merge(&mut metadata.fee_amount, coin);
+                    // Only reset market maker fees if we actually converted them to LP tokens
+                    if (mm_fee_liquidity > 0) {
+                        metadata.market_maker_fee_x = 0;
+                        metadata.market_maker_fee_y = 0;
+                    }
                 }
             };
         };
-
         fee
     }
 
@@ -825,5 +866,30 @@ module warpgate::swap {
     #[test_only]
     public fun initialize(sender: &signer) {
         init_module(sender);
+    }
+
+    /// Withdraw accumulated market maker fees for token X and Y
+    public entry fun withdraw_market_maker_fees<X, Y>(
+        sender: &signer,
+        to: address
+    ) acquires TokenPairMetadata, SwapInfo {
+        assert!(signer::address_of(sender) == borrow_global<SwapInfo>(RESOURCE_ACCOUNT).admin, ERROR_NOT_ADMIN);
+        let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
+        
+        // Extract and deposit X fees if any
+        if (metadata.market_maker_fee_x > 0) {
+            let fee_x = extract_x(metadata.market_maker_fee_x, metadata);
+            check_or_register_coin_store<X>(sender);
+            coin::deposit(to, fee_x);
+            metadata.market_maker_fee_x = 0;
+        };
+
+        // Extract and deposit Y fees if any
+        if (metadata.market_maker_fee_y > 0) {
+            let fee_y = extract_y(metadata.market_maker_fee_y, metadata);
+            check_or_register_coin_store<Y>(sender);
+            coin::deposit(to, fee_y);
+            metadata.market_maker_fee_y = 0;
+        };
     }
 }
