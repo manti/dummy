@@ -56,7 +56,6 @@ module warpgate::swap_test {
         // let bob_lp_balance = coin::balance<LPToken<TestBUSD, TestWARP>>(signer::address_of(bob));
         let alice_token_x_before_balance = coin::balance<TestWARP>(signer::address_of(alice));
         let fee_add = swap::fee_to();
-        std::debug::print<address>(&fee_add);
         let fee_signer = account::create_account_for_test(fee_add);
         coin::register<TestWARP>(&fee_signer);
         coin::register<TestBUSD>(&fee_signer);
@@ -159,13 +158,26 @@ module warpgate::swap_test {
         // let bob_lp_balance = coin::balance<LPToken<TestBUSD, TestWARP>>(signer::address_of(bob));
         let alice_token_x_before_balance = coin::balance<TestWARP>(signer::address_of(alice));
 
+        let fee_add = swap::fee_to();
+        let fee_signer = account::create_account_for_test(fee_add);
+        coin::register<TestWARP>(&fee_signer);
+        coin::register<TestBUSD>(&fee_signer);
+        let mm_fee_add = swap::mm_fee_to();
+
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
         router::swap_exact_input<TestWARP, TestBUSD>(alice, input_x, 0);
 
         let alice_token_x_after_balance = coin::balance<TestWARP>(signer::address_of(alice));
         let alice_token_y_after_balance = coin::balance<TestBUSD>(signer::address_of(alice));
 
-        let output_y = test_utils::calc_output_using_input(input_x, initial_reserve_x, initial_reserve_y);
-        let new_reserve_x = initial_reserve_x + input_x;
+        let fee_amount = (input_x as u128) * 25 / 10000;
+        let amount_after_fee = input_x - (fee_amount as u64);
+
+        let output_y = test_utils::calc_output_using_input(amount_after_fee, initial_reserve_x, initial_reserve_y);
+        let new_reserve_x = initial_reserve_x + amount_after_fee;
         let new_reserve_y = initial_reserve_y - (output_y as u64);
 
         let (reserve_y, reserve_x, _) = swap::token_reserves<TestBUSD, TestWARP>();
@@ -236,6 +248,17 @@ module warpgate::swap_test {
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
+
+        let fee_add = swap::fee_to();
+        let fee_signer = account::create_account_for_test(fee_add);
+        coin::register<TestWARP>(&fee_signer);
+        coin::register<TestBUSD>(&fee_signer);
+        let mm_fee_add = swap::mm_fee_to();
+
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
         router::swap_exact_input<TestWARP, TestBUSD>(alice, input_x, 0);
     }
 
@@ -298,6 +321,17 @@ module warpgate::swap_test {
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
         let output_y = test_utils::calc_output_using_input(input_x, initial_reserve_x, initial_reserve_y);
+        let fee_add = swap::fee_to();
+        let fee_signer = account::create_account_for_test(fee_add);
+        coin::register<TestWARP>(&fee_signer);
+        coin::register<TestBUSD>(&fee_signer);
+        let mm_fee_add = swap::mm_fee_to();
+
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+
         router::swap_exact_input<TestWARP, TestBUSD>(alice, input_x, ((output_y + 1) as u64));
     }
 
