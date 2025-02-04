@@ -3,6 +3,7 @@ module warpgate::swap {
     use std::signer;
     use std::option;
     use std::string;
+    use std::debug;
     use aptos_std::type_info;
     use aptos_std::event;
 
@@ -20,9 +21,12 @@ module warpgate::swap {
     const ZERO_ACCOUNT: address = @zero;
     const DEFAULT_ADMIN: address = @default_admin;
     const RESOURCE_ACCOUNT: address = @warpgate;
+    const MM_FEE_TO: address = @mmfee;
     const DEV: address = @dev;
     const MINIMUM_LIQUIDITY: u128 = 1000;
     const MAX_COIN_NAME_LENGTH: u64 = 32;
+    const MARKET_MAKER_FEE: u128 = 25; // 0.25% participation fee
+    const FEE_DENOMINATOR: u128 = 10000;
 
     // List of errors
     const ERROR_ONLY_ADMIN: u64 = 0;
@@ -44,8 +48,13 @@ module warpgate::swap {
     const ERROR_NOT_EQUAL_EXACT_AMOUNT: u64 = 19;
     const ERROR_NOT_RESOURCE_ACCOUNT: u64 = 20;
     const ERROR_NO_FEE_WITHDRAW: u64 = 21;
+    const ERROR_FEE_TO_NOT_REGISTERED: u64 = 22;
 
     const PRECISION: u64 = 10000;
+
+    // Add new error codes
+    const ERROR_INVALID_FEE: u64 = 22;
+    const MAX_FEE: u128 = 100; // 1% max fee
 
     /// Max `u128` value.
     const MAX_U128: u128 = 340282366920938463463374607431768211455;
@@ -71,6 +80,8 @@ module warpgate::swap {
         burn_cap: coin::BurnCapability<LPToken<X, Y>>,
         /// Freeze capacity of LP Token
         freeze_cap: coin::FreezeCapability<LPToken<X, Y>>,
+        /// swap fee in basis points (e.g., 25 = 0.25%)
+        swap_fee: u128,
     }
 
     /// Stores the reservation info required for the token pairs
@@ -84,7 +95,10 @@ module warpgate::swap {
         signer_cap: account::SignerCapability,
         fee_to: address,
         admin: address,
-        pair_created: event::EventHandle<PairCreatedEvent>
+        mm_fee: u128,
+        mm_fee_to: address,
+        pair_created: event::EventHandle<PairCreatedEvent>,
+        market_maker_fees: event::EventHandle<MarketMakerFeeEvent>,
     }
 
     struct PairCreatedEvent has drop, store {
@@ -123,6 +137,16 @@ module warpgate::swap {
         amount_y_out: u64
     }
 
+    /// Event emitted when market maker fees are collected
+    struct MarketMakerFeeEvent has drop, store {
+        /// The user who paid the fee
+        user: address,
+        /// Token information
+        token: string::String,
+        /// Amount of fee collected
+        fee_amount: u64,
+    }
+
     /*
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -137,15 +161,19 @@ module warpgate::swap {
         let resource_signer = account::create_signer_with_capability(&signer_cap);
         move_to(&resource_signer, SwapInfo {
             signer_cap,
-            fee_to: DEFAULT_ADMIN,
+            fee_to: ZERO_ACCOUNT,
             admin: DEFAULT_ADMIN,
+            mm_fee: MARKET_MAKER_FEE,
+            mm_fee_to: MM_FEE_TO,
             pair_created: account::new_event_handle<PairCreatedEvent>(&resource_signer),
+            market_maker_fees: account::new_event_handle<MarketMakerFeeEvent>(&resource_signer),
         });
     }
 
     /// Create the specified coin pair
     public(friend) fun create_pair<X, Y>(
         sender: &signer,
+        swap_fee: u128
     ) acquires SwapInfo {
         assert!(!is_pair_created<X, Y>(), ERROR_ALREADY_INITIALIZED);
 
@@ -168,7 +196,7 @@ module warpgate::swap {
         let (burn_cap, freeze_cap, mint_cap) = coin::initialize<LPToken<X, Y>>(
             &resource_signer,
             lp_name,
-            string::utf8(b"Cake-LP"),
+            string::utf8(b"Warp-LP"),
             8,
             true
         );
@@ -193,6 +221,7 @@ module warpgate::swap {
                 mint_cap,
                 burn_cap,
                 freeze_cap,
+                swap_fee, // Initialize with provided fee
             }
         );
 
@@ -279,6 +308,10 @@ module warpgate::swap {
     public fun fee_to(): address acquires SwapInfo {
         let swap_info = borrow_global_mut<SwapInfo>(RESOURCE_ACCOUNT);
         swap_info.fee_to
+    }
+    public fun mm_fee_to(): address acquires SwapInfo {
+        let swap_info = borrow_global_mut<SwapInfo>(RESOURCE_ACCOUNT);
+        swap_info.mm_fee_to
     }
 
     // ===================== Update functions ======================
@@ -428,9 +461,9 @@ module warpgate::swap {
         sender: &signer,
         amount_in: u64,
         to: address
-    ): u64 acquires TokenPairReserve, TokenPairMetadata {
-        let coins = coin::withdraw<X>(sender, amount_in);
-        let (coins_x_out, coins_y_out) = swap_exact_x_to_y_direct<X, Y>(coins);
+    ): u64 acquires TokenPairReserve, TokenPairMetadata, SwapInfo {
+        let (coin_in, amount_after_fee) = deduct_market_maker_fee<X>(sender, amount_in);
+        let (coins_x_out, coins_y_out) = swap_exact_x_to_y_direct<X, Y>(coin_in);
         let amount_out = coin::value(&coins_y_out);
         check_or_register_coin_store<Y>(sender);
         coin::destroy_zero(coins_x_out); // or others ways to drop `coins_x_out`
@@ -445,7 +478,7 @@ module warpgate::swap {
         let amount_in = coin::value<X>(&coins_in);
         deposit_x<X, Y>(coins_in);
         let (rin, rout, _) = token_reserves<X, Y>();
-        let amount_out = swap_utils::get_amount_out(amount_in, rin, rout);
+        let amount_out = swap_utils::get_amount_out(amount_in, rin, rout, get_pair_fee<X, Y>());
         let (coins_x_out, coins_y_out) = swap<X, Y>(0, amount_out);
         assert!(coin::value<X>(&coins_x_out) == 0, ERROR_INSUFFICIENT_OUTPUT_AMOUNT);
         (coins_x_out, coins_y_out)
@@ -479,9 +512,9 @@ module warpgate::swap {
         sender: &signer,
         amount_in: u64,
         to: address
-    ): u64 acquires TokenPairReserve, TokenPairMetadata {
-        let coins = coin::withdraw<Y>(sender, amount_in);
-        let (coins_x_out, coins_y_out) = swap_exact_y_to_x_direct<X, Y>(coins);
+    ): u64 acquires TokenPairReserve, TokenPairMetadata, SwapInfo {
+        let (coin_in, amount_after_fee) = deduct_market_maker_fee<Y>(sender, amount_in);
+        let (coins_x_out, coins_y_out) = swap_exact_y_to_x_direct<X, Y>(coin_in);
         let amount_out = coin::value<X>(&coins_x_out);
         check_or_register_coin_store<X>(sender);
         coin::deposit(to, coins_x_out);
@@ -519,7 +552,7 @@ module warpgate::swap {
         let amount_in = coin::value<Y>(&coins_in);
         deposit_y<X, Y>(coins_in);
         let (rout, rin, _) = token_reserves<X, Y>();
-        let amount_out = swap_utils::get_amount_out(amount_in, rin, rout);
+        let amount_out = swap_utils::get_amount_out(amount_in, rin, rout, get_pair_fee<X, Y>());
         let (coins_x_out, coins_y_out) = swap<X, Y>(amount_out, 0);
         assert!(coin::value<Y>(&coins_y_out) == 0, ERROR_INSUFFICIENT_OUTPUT_AMOUNT);
         (coins_x_out, coins_y_out)
@@ -530,12 +563,10 @@ module warpgate::swap {
         amount_y_out: u64
     ): (coin::Coin<X>, coin::Coin<Y>) acquires TokenPairReserve, TokenPairMetadata {
         assert!(amount_x_out > 0 || amount_y_out > 0, ERROR_INSUFFICIENT_OUTPUT_AMOUNT);
-
         let reserves = borrow_global_mut<TokenPairReserve<X, Y>>(RESOURCE_ACCOUNT);
         assert!(amount_x_out < reserves.reserve_x && amount_y_out < reserves.reserve_y, ERROR_INSUFFICIENT_LIQUIDITY);
-
         let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
-
+        let fee = metadata.swap_fee;
         let coins_x_out = coin::zero<X>();
         let coins_y_out = coin::zero<Y>();
         if (amount_x_out > 0) coin::merge(&mut coins_x_out, extract_x(amount_x_out, metadata));
@@ -548,15 +579,15 @@ module warpgate::swap {
         let amount_y_in = if (balance_y > reserves.reserve_y - amount_y_out) {
             balance_y - (reserves.reserve_y - amount_y_out)
         } else { 0 };
-
         assert!(amount_x_in > 0 || amount_y_in > 0, ERROR_INSUFFICIENT_INPUT_AMOUNT);
 
         let prec = (PRECISION as u128);
-        let balance_x_adjusted = (balance_x as u128) * prec - (amount_x_in as u128) * 25u128;
-        let balance_y_adjusted = (balance_y as u128) * prec - (amount_y_in as u128) * 25u128;
+
+        let balance_x_adjusted = (balance_x as u128) * prec - (amount_x_in as u128) * fee;
+        let balance_y_adjusted = (balance_y as u128) * prec - (amount_y_in as u128) * fee;
+        
         let reserve_x_adjusted = (reserves.reserve_x as u128) * prec;
         let reserve_y_adjusted = (reserves.reserve_y as u128) * prec;
-
         // No need to use u256 when balance_x_adjusted * balance_y_adjusted and reserve_x_adjusted * reserve_y_adjusted are less than MAX_U128.
         let compare_result = if(balance_x_adjusted > 0 && reserve_x_adjusted > 0 && MAX_U128 / balance_x_adjusted > balance_y_adjusted && MAX_U128 / reserve_x_adjusted > reserve_y_adjusted){
             balance_x_adjusted * balance_y_adjusted >= reserve_x_adjusted * reserve_y_adjusted
@@ -568,7 +599,6 @@ module warpgate::swap {
         assert!(compare_result, ERROR_K);
 
         update(balance_x, balance_y, reserves);
-
         (coins_x_out, coins_y_out)
     }
 
@@ -787,12 +817,51 @@ module warpgate::swap {
         aborts_if coin::value(metadata2.fee_amount) == 0;
     }
 
+    // Add function to update fee
+    public entry fun update_swap_fee<X, Y>(
+        sender: &signer,
+        new_fee: u128,
+    ) acquires TokenPairMetadata, SwapInfo {
+        assert!(new_fee <= MAX_FEE, ERROR_INVALID_FEE);
+        let sender_addr = signer::address_of(sender);
+        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
+        assert!(sender_addr == swap_info.admin, ERROR_NOT_ADMIN);
+
+        let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
+        metadata.swap_fee = new_fee;
+    }
+
+    /// Get pair fee from TokenPairMetadata
+    public fun get_pair_fee<X, Y>(): u128 acquires TokenPairMetadata {
+        let metadata = borrow_global<TokenPairMetadata<X, Y>>(RESOURCE_ACCOUNT);
+        metadata.swap_fee
+    }
+
+
     public entry fun upgrade_swap(sender: &signer, metadata_serialized: vector<u8>, code: vector<vector<u8>>) acquires SwapInfo {
         let sender_addr = signer::address_of(sender);
         let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
         assert!(sender_addr == swap_info.admin, ERROR_NOT_ADMIN);
         let resource_signer = account::create_signer_with_capability(&swap_info.signer_cap);
         code::publish_package_txn(&resource_signer, metadata_serialized, code);
+    }
+
+    /// Deduct market maker fee from input token before the swap
+    fun deduct_market_maker_fee<T>(sender: &signer, amount_in: u64): (coin::Coin<T>, u64) acquires SwapInfo {
+        let swap_info = borrow_global_mut<SwapInfo>(RESOURCE_ACCOUNT);
+        let fee_amount = ((amount_in as u128) * swap_info.mm_fee / FEE_DENOMINATOR) as u64;
+        let amount_after_fee = amount_in - fee_amount;
+        let fee_coin = coin::withdraw<T>(sender, fee_amount);
+        let swap_coin = coin::withdraw<T>(sender, amount_after_fee);
+        //debug::print<vector<u8>>(b"fee address");  // Specify type for string
+        debug::print<address>(&swap_info.fee_to);
+        // Check that new_fee_to has registered for both coin types
+        assert!(coin::is_account_registered<T>(swap_info.mm_fee_to), 
+            ERROR_FEE_TO_NOT_REGISTERED);
+        coin::deposit(swap_info.mm_fee_to, fee_coin);
+        let sender_addr = signer::address_of(sender);
+      
+        (swap_coin, amount_after_fee)
     }
 
     #[test_only]

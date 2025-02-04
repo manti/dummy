@@ -23,11 +23,12 @@ module warpgate::router {
     /// Should revert if the pair is already created
     public entry fun create_pair<X, Y>(
         sender: &signer,
+        swap_fee: u128,
     ) {
         if (swap_utils::sort_token_type<X, Y>()) {
-            swap::create_pair<X, Y>(sender);
+            swap::create_pair<X, Y>(sender, swap_fee);
         } else {
-            swap::create_pair<Y, X>(sender);
+            swap::create_pair<Y, X>(sender, swap_fee);
         }
     }
 
@@ -39,9 +40,10 @@ module warpgate::router {
         amount_y_desired: u64,
         amount_x_min: u64,
         amount_y_min: u64,
+        swap_fee: u128,
     ) {
         if (!(swap::is_pair_created<X, Y>() || swap::is_pair_created<Y, X>())) {
-            create_pair<X, Y>(sender);
+            create_pair<X, Y>(sender, swap_fee);
         };
 
         let amount_x;
@@ -133,11 +135,11 @@ module warpgate::router {
         is_pair_created_internal<X, Y>();
         let x_in = if (swap_utils::sort_token_type<X, Y>()) {
             let (rin, rout, _) = swap::token_reserves<X, Y>();
-            let amount_in = swap_utils::get_amount_in(y_out, rin, rout);
+            let amount_in = swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<X, Y>());
             swap::swap_x_to_exact_y<X, Y>(sender, amount_in, y_out, signer::address_of(sender))
         } else {
             let (rout, rin, _) = swap::token_reserves<Y, X>();
-            let amount_in = swap_utils::get_amount_in(y_out, rin, rout);
+            let amount_in = swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<Y, X>());
             swap::swap_y_to_exact_x<Y, X>(sender, amount_in, y_out, signer::address_of(sender))
         };
         assert!(x_in <= x_max_in, E_INPUT_MORE_THAN_MAX);
@@ -183,10 +185,10 @@ module warpgate::router {
     fun get_amount_in_internal<X, Y>(is_x_to_y:bool, y_out_amount: u64): u64 {
         if (is_x_to_y) {
             let (rin, rout, _) = swap::token_reserves<X, Y>();
-            swap_utils::get_amount_in(y_out_amount, rin, rout)
+            swap_utils::get_amount_in(y_out_amount, rin, rout, swap::get_pair_fee<X, Y>())
         } else {
             let (rout, rin, _) = swap::token_reserves<Y, X>();
-            swap_utils::get_amount_in(y_out_amount, rin, rout)
+            swap_utils::get_amount_in(y_out_amount, rin, rout, swap::get_pair_fee<Y, X>())
         }
     } 
 
@@ -258,17 +260,17 @@ module warpgate::router {
         let rout;
         let y_out = if (second_is_y_to_z) {
             (rin, rout, _) = swap::token_reserves<Y, Z>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Y, Z>())
         }else {
             (rout, rin, _) = swap::token_reserves<Z, Y>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Z, Y>())
         };
         let x_in = if (first_is_x_to_y) {
             (rin, rout, _) = swap::token_reserves<X, Y>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<X, Y>())
         }else {
             (rout, rin, _) = swap::token_reserves<Y, X>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<Y, X>())
         };
 
         assert!(x_in <= x_max_in, E_INPUT_MORE_THAN_MAX);
@@ -362,25 +364,25 @@ module warpgate::router {
         let rout;
         let z_out = if (third_is_z_to_a) {
             (rin, rout, _) = swap::token_reserves<Z, A>();
-            swap_utils::get_amount_in(a_out, rin, rout)
+            swap_utils::get_amount_in(a_out, rin, rout, swap::get_pair_fee<Z, A>())
         }else {
             (rout, rin, _) = swap::token_reserves<A, Z>();
-            swap_utils::get_amount_in(a_out, rin, rout)
+            swap_utils::get_amount_in(a_out, rin, rout, swap::get_pair_fee<A, Z>())
         };
 
         let y_out = if (second_is_y_to_z) {
             (rin, rout, _) = swap::token_reserves<Y, Z>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Y, Z>())
         }else {
             (rout, rin, _) = swap::token_reserves<Z, Y>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Z, Y>())
         };
         let x_in = if (first_is_x_to_y) {
             (rin, rout, _) = swap::token_reserves<X, Y>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<X, Y>())
         }else {
             (rout, rin, _) = swap::token_reserves<Y, X>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<Y, X>())
         };
 
         assert!(x_in <= x_max_in, E_INPUT_MORE_THAN_MAX);
@@ -489,33 +491,33 @@ module warpgate::router {
 
         let a_out = if (fourth_is_a_to_b) {
             (rin, rout, _) = swap::token_reserves<A, B>();
-            swap_utils::get_amount_in(b_out, rin, rout)
+            swap_utils::get_amount_in(b_out, rin, rout, swap::get_pair_fee<A, B>())
         }else {
             (rout, rin, _) = swap::token_reserves<B, A>();
-            swap_utils::get_amount_in(b_out, rin, rout)
+            swap_utils::get_amount_in(b_out, rin, rout, swap::get_pair_fee<B, A>())
         };
 
         let z_out = if (third_is_z_to_a) {
             (rin, rout, _) = swap::token_reserves<Z, A>();
-            swap_utils::get_amount_in(a_out, rin, rout)
+            swap_utils::get_amount_in(a_out, rin, rout, swap::get_pair_fee<Z, A>())
         }else {
             (rout, rin, _) = swap::token_reserves<A, Z>();
-            swap_utils::get_amount_in(a_out, rin, rout)
+            swap_utils::get_amount_in(a_out, rin, rout, swap::get_pair_fee<A, Z>())
         };
 
         let y_out = if (second_is_y_to_z) {
             (rin, rout, _) = swap::token_reserves<Y, Z>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Y, Z>())
         }else {
             (rout, rin, _) = swap::token_reserves<Z, Y>();
-            swap_utils::get_amount_in(z_out, rin, rout)
+            swap_utils::get_amount_in(z_out, rin, rout, swap::get_pair_fee<Z, Y>())
         };
         let x_in = if (first_is_x_to_y) {
             (rin, rout, _) = swap::token_reserves<X, Y>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<X, Y>())
         }else {
             (rout, rin, _) = swap::token_reserves<Y, X>();
-            swap_utils::get_amount_in(y_out, rin, rout)
+            swap_utils::get_amount_in(y_out, rin, rout, swap::get_pair_fee<Y, X>())
         };
 
         assert!(x_in <= x_max_in, E_INPUT_MORE_THAN_MAX);
