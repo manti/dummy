@@ -1,7 +1,7 @@
-# WarpGateSwap Fee System Documentation
+# Warpgate Fee System Documentation
 
 ## Overview
-WarpgateSwap implements a dual-fee system consisting of swap fees and market maker fees. This document outlines the fee collection, accumulation, and distribution mechanisms.
+Warpgate implements a dual-fee system consisting of swap fees and market maker fees. This document outlines the fee collection, accumulation, and distribution mechanisms.
 
 ## Fee Structure
 
