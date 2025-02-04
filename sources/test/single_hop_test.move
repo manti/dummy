@@ -36,6 +36,7 @@ module warpgate::swap_test {
         account::create_account_for_test(signer::address_of(bob));
         account::create_account_for_test(signer::address_of(alice));
 
+
         setup_test_with_genesis(dev, admin, treasury, resource_account);
 
         let coin_owner = test_coins::init_coins();
@@ -54,14 +55,29 @@ module warpgate::swap_test {
 
         // let bob_lp_balance = coin::balance<LPToken<TestBUSD, TestWARP>>(signer::address_of(bob));
         let alice_token_x_before_balance = coin::balance<TestWARP>(signer::address_of(alice));
+        let fee_add = swap::fee_to();
+        std::debug::print<address>(&fee_add);
+        let fee_signer = account::create_account_for_test(fee_add);
+        coin::register<TestWARP>(&fee_signer);
+        coin::register<TestBUSD>(&fee_signer);
+        let mm_fee_add = swap::mm_fee_to();
 
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+        
         router::swap_exact_input<TestWARP, TestBUSD>(alice, input_x, 0);
 
         let alice_token_x_after_balance = coin::balance<TestWARP>(signer::address_of(alice));
         let alice_token_y_after_balance = coin::balance<TestBUSD>(signer::address_of(alice));
 
-        let output_y = test_utils::calc_output_using_input(input_x, initial_reserve_x, initial_reserve_y);
-        let new_reserve_x = initial_reserve_x + input_x;
+         // Calculate fee
+        let fee_amount = (input_x as u128) * 25 / 10000;
+        let amount_after_fee = input_x - (fee_amount as u64);
+
+        let output_y = test_utils::calc_output_using_input(amount_after_fee, initial_reserve_x, initial_reserve_y);
+        let new_reserve_x = initial_reserve_x + amount_after_fee;
         let new_reserve_y = initial_reserve_y - (output_y as u64);
 
         let (reserve_y, reserve_x, _) = swap::token_reserves<TestBUSD, TestWARP>();
@@ -100,10 +116,11 @@ module warpgate::swap_test {
 
         let treasury_remove_liquidity_x = ((new_reserve_x) as u128) * suppose_fee_amount / suppose_total_supply;
         let treasury_remove_liquidity_y = ((new_reserve_y) as u128) * suppose_fee_amount / suppose_total_supply;
-
         assert!(treasury_lp_after_balance == (suppose_fee_amount as u64), 93);
         assert!(treasury_token_x_after_balance == (treasury_remove_liquidity_x as u64), 92);
         assert!(treasury_token_y_after_balance == (treasury_remove_liquidity_y as u64), 91);
+        let mm_fee_collector_balance = coin::balance<TestWARP>(signer::address_of(&mm_fee_signer));
+        assert!(mm_fee_collector_balance == (fee_amount as u64), 90);
     }
 
     #[test(dev = @dev, admin = @default_admin, resource_account = @warpgate, treasury = @0x23456, bob = @0x12345, alice = @0x12346)]
