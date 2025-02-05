@@ -853,14 +853,21 @@ module warpgate::swap {
         let amount_after_fee = amount_in - fee_amount;
         let fee_coin = coin::withdraw<T>(sender, fee_amount);
         let swap_coin = coin::withdraw<T>(sender, amount_after_fee);
-        //debug::print<vector<u8>>(b"fee address");  // Specify type for string
-        debug::print<address>(&swap_info.fee_to);
         // Check that new_fee_to has registered for both coin types
         assert!(coin::is_account_registered<T>(swap_info.mm_fee_to), 
             ERROR_FEE_TO_NOT_REGISTERED);
         coin::deposit(swap_info.mm_fee_to, fee_coin);
         let sender_addr = signer::address_of(sender);
-      
+
+        // Emit market maker fee event
+        event::emit_event<MarketMakerFeeEvent>(
+            &mut swap_info.market_maker_fees,
+            MarketMakerFeeEvent {
+                user: sender_addr,
+                token: type_info::type_name<T>(),
+                fee_amount,
+            }
+        );
         (swap_coin, amount_after_fee)
     }
 
