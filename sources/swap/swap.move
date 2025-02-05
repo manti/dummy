@@ -876,7 +876,7 @@ module warpgate::swap {
 
     /// Register coin stores for market maker fee recipient
     /// Must be called by the mm_fee_to address
-    public entry fun register_mm_fee_tokens<T>(sender: &signer) acquires SwapInfo {
+    public entry fun register_mm_fee_tokens<X, Y>(sender: &signer) acquires SwapInfo {
         let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
         let sender_addr = signer::address_of(sender);
         
@@ -884,14 +884,18 @@ module warpgate::swap {
         assert!(sender_addr == swap_info.mm_fee_to, ERROR_NOT_FEE_TO);
         
         // Register token if not already registered
-        if (!coin::is_account_registered<T>(sender_addr)) {
-            coin::register<T>(sender);
+        if (!coin::is_account_registered<X>(sender_addr)) {
+            coin::register<X>(sender);
+        };
+         // Register token if not already registered
+        if (!coin::is_account_registered<Y>(sender_addr)) {
+            coin::register<Y>(sender);
         };
     }
 
-    public fun is_mm_fee_tokens_registered<T>(): bool acquires SwapInfo {
+    public fun is_mm_fee_tokens_registered<X, Y>(): bool acquires SwapInfo {
         let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
-        coin::is_account_registered<T>(swap_info.mm_fee_to) 
+        coin::is_account_registered<X>(swap_info.mm_fee_to) && coin::is_account_registered<Y>(swap_info.mm_fee_to)
     }
 
     #[test_only]
