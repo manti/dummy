@@ -58,12 +58,10 @@ module warpgate::swap_test {
         let fee_add = swap::fee_to();
         let fee_signer = account::create_account_for_test(fee_add);
         coin::register<TestWARP>(&fee_signer);
-        coin::register<TestBUSD>(&fee_signer);
         let mm_fee_add = swap::mm_fee_to();
 
         let mm_fee_signer = account::create_account_for_test(mm_fee_add);
         coin::register<TestWARP>(&mm_fee_signer);
-        coin::register<TestBUSD>(&mm_fee_signer);
 
         
         router::swap_exact_input<TestWARP, TestBUSD>(alice, input_x, 0);
