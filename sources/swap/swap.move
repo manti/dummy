@@ -321,7 +321,10 @@ module warpgate::swap {
         sender: &signer,
         amount_x: u64,
         amount_y: u64
-    ): (u64, u64, u64) acquires TokenPairReserve, TokenPairMetadata, PairEventHolder {
+    ): (u64, u64, u64) acquires TokenPairReserve, TokenPairMetadata, PairEventHolder, SwapInfo {
+        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
+        assert!(coin::is_account_registered<X>(swap_info.mm_fee_to), 
+            ERROR_FEE_TO_NOT_REGISTERED);
         let (a_x, a_y, coin_lp, fee_amount, coin_left_x, coin_left_y) = add_liquidity_direct(coin::withdraw<X>(sender, amount_x), coin::withdraw<Y>(sender, amount_y));
         let sender_addr = signer::address_of(sender);
         let lp_amount = coin::value(&coin_lp);
@@ -853,15 +856,46 @@ module warpgate::swap {
         let amount_after_fee = amount_in - fee_amount;
         let fee_coin = coin::withdraw<T>(sender, fee_amount);
         let swap_coin = coin::withdraw<T>(sender, amount_after_fee);
-        //debug::print<vector<u8>>(b"fee address");  // Specify type for string
-        debug::print<address>(&swap_info.fee_to);
         // Check that new_fee_to has registered for both coin types
         assert!(coin::is_account_registered<T>(swap_info.mm_fee_to), 
             ERROR_FEE_TO_NOT_REGISTERED);
         coin::deposit(swap_info.mm_fee_to, fee_coin);
         let sender_addr = signer::address_of(sender);
-      
+
+        // Emit market maker fee event
+        event::emit_event<MarketMakerFeeEvent>(
+            &mut swap_info.market_maker_fees,
+            MarketMakerFeeEvent {
+                user: sender_addr,
+                token: type_info::type_name<T>(),
+                fee_amount,
+            }
+        );
         (swap_coin, amount_after_fee)
+    }
+
+    /// Register coin stores for market maker fee recipient
+    /// Must be called by the mm_fee_to address
+    public entry fun register_mm_fee_tokens<X, Y>(sender: &signer) acquires SwapInfo {
+        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
+        let sender_addr = signer::address_of(sender);
+        
+        // Only mm_fee_to can register
+        assert!(sender_addr == swap_info.mm_fee_to, ERROR_NOT_FEE_TO);
+        
+        // Register token if not already registered
+        if (!coin::is_account_registered<X>(sender_addr)) {
+            coin::register<X>(sender);
+        };
+         // Register token if not already registered
+        if (!coin::is_account_registered<Y>(sender_addr)) {
+            coin::register<Y>(sender);
+        };
+    }
+
+    public fun is_mm_fee_tokens_registered<X, Y>(): bool acquires SwapInfo {
+        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
+        coin::is_account_registered<X>(swap_info.mm_fee_to) && coin::is_account_registered<Y>(swap_info.mm_fee_to)
     }
 
     #[test_only]

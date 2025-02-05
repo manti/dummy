@@ -50,6 +50,12 @@ module warpgate::liquidity_test {
         let alice_liquidity_x = 2 * pow(10, 8);
         let alice_liquidity_y = 4 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, bob_liquidity_x, bob_liquidity_y, 0, 0, 25);
         router::add_liquidity<TestWARP, TestBUSD>(alice, alice_liquidity_x, alice_liquidity_y, 0, 0, 25);
@@ -96,6 +102,10 @@ module warpgate::liquidity_test {
 
         let bob_liquidity_x = 5 * pow(10, 8);
         let bob_liquidity_y = 10 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
 
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, bob_liquidity_x, bob_liquidity_y, 0, 0, 25);
@@ -149,6 +159,11 @@ module warpgate::liquidity_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -178,6 +193,11 @@ module warpgate::liquidity_test {
 
         let bob_liquidity_x = 5 * pow(10, 8);
         let bob_liquidity_y = 10 * pow(10, 8);
+
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
 
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, bob_liquidity_x, bob_liquidity_y, 0, 0, 25);
@@ -232,6 +252,11 @@ module warpgate::liquidity_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -266,7 +291,10 @@ module warpgate::liquidity_test {
 
         let alice_add_liquidity_x = 2 * pow(10, 8);
         let alice_add_liquidity_y = 4 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, bob_add_liquidity_x, bob_add_liquidity_y, 0, 0, 25);
         router::add_liquidity<TestWARP, TestBUSD>(alice, alice_add_liquidity_x, alice_add_liquidity_y, 0, 0, 25);
@@ -368,6 +396,12 @@ module warpgate::liquidity_test {
 
         let user4_add_liquidity_x = 45 * pow(10, 8);
         let user4_add_liquidity_y = 90 * pow(10, 8);
+
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
 
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(user1, user1_add_liquidity_x, user1_add_liquidity_y, 0, 0, 25);
@@ -503,6 +537,10 @@ module warpgate::liquidity_test {
         let alice_liquidity_x = 1;
         let alice_liquidity_y = 2;
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, bob_liquidity_x, bob_liquidity_y, 0, 0, 25);
         router::add_liquidity<TestWARP, TestBUSD>(alice, alice_liquidity_x, alice_liquidity_y, 0, 0, 25);

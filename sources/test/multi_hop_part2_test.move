@@ -83,6 +83,17 @@ module warpgate::multi_part2_swap_test {
         let user2_add_liquidity_za_a = 30 * pow(10, 8);
         let input_x = 1 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+        coin::register<TestUSDC>(&mm_fee_signer);
+
+        coin::register<TestBNB>(&mm_fee_signer);
+
+        coin::register<TestAPT>(&mm_fee_signer);
+
         // bob provider liquidity for 1:2 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(user1, user1_add_liquidity_xy_x, user1_add_liquidity_xy_y, 0, 0, 25);
         let user1_suppose_xy_lp_balance = math::sqrt(((user1_add_liquidity_xy_x as u128) * (user1_add_liquidity_xy_y as u128))) - MINIMUM_LIQUIDITY;
@@ -310,6 +321,18 @@ module warpgate::multi_part2_swap_test {
         let initial_reserve_ab_b = 15 * pow(10, 8);
         let input_x = 1 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+        coin::register<TestUSDC>(&mm_fee_signer);
+
+        coin::register<TestBNB>(&mm_fee_signer);
+
+        coin::register<TestAPT>(&mm_fee_signer);
+
+
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);
 
         router::add_liquidity<TestBUSD, TestUSDC>(bob, initial_reserve_yz_y, initial_reserve_yz_z, 0, 0, 25);
@@ -390,6 +413,17 @@ module warpgate::multi_part2_swap_test {
         let initial_reserve_ab_a = 10 * pow(10, 8);
         let initial_reserve_ab_b = 15 * pow(10, 8);
         let output_b = 8888888;
+
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+        coin::register<TestUSDC>(&mm_fee_signer);
+
+        coin::register<TestBNB>(&mm_fee_signer);
+
+        coin::register<TestAPT>(&mm_fee_signer);
 
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);
 
