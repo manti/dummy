@@ -871,7 +871,7 @@ module warpgate::swap {
         (swap_coin, amount_after_fee)
     }
 
-        /// Register coin stores for market maker fee recipient
+    /// Register coin stores for market maker fee recipient
     /// Must be called by the mm_fee_to address
     public entry fun register_mm_fee_tokens<T>(sender: &signer) acquires SwapInfo {
         let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
