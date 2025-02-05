@@ -880,7 +880,7 @@ module warpgate::swap {
         // Only mm_fee_to can register
         assert!(sender_addr == swap_info.mm_fee_to, ERROR_NOT_FEE_TO);
         
-        // Register both tokens if not already registered
+        // Register token if not already registered
         if (!coin::is_account_registered<T>(sender_addr)) {
             coin::register<T>(sender);
         };
