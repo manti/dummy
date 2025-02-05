@@ -51,6 +51,12 @@ module warpgate::multi_swap_test {
         let initial_reserve_yz_z = 10 * pow(10, 8);
         let input_x = 1 * pow(10, 8);
 
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+        coin::register<TestUSDC>(&mm_fee_signer);
+
         // bob provider liquidity for 1:2 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);
         let bob_suppose_xy_lp_balance = math::sqrt(((initial_reserve_xy_x as u128) * (initial_reserve_xy_y as u128))) - MINIMUM_LIQUIDITY;
@@ -180,6 +186,13 @@ module warpgate::multi_swap_test {
         let initial_reserve_yz_y = 5 * pow(10, 8);
         let initial_reserve_yz_z = 10 * pow(10, 8);
         let output_z = 249140454;
+
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+        coin::register<TestUSDC>(&mm_fee_signer);
+        
 
         // bob provider liquidity for 1:2 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);
@@ -313,6 +326,14 @@ module warpgate::multi_swap_test {
         let initial_reserve_za_z = 10 * pow(10, 8);
         let initial_reserve_za_a = 15 * pow(10, 8);
         let input_x = 1 * pow(10, 8);
+
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+        coin::register<TestUSDC>(&mm_fee_signer);
+        coin::register<TestBNB>(&mm_fee_signer);
+
 
         // bob provider liquidity for 1:2 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);
@@ -491,6 +512,14 @@ module warpgate::multi_swap_test {
         let initial_reserve_za_z = 5 * pow(10, 8);
         let initial_reserve_za_a = 10 * pow(10, 8);
         let output_a = 298575210;
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
+
+        coin::register<TestUSDC>(&mm_fee_signer);
+
+        coin::register<TestBNB>(&mm_fee_signer);
 
         // bob provider liquidity for 1:2 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_xy_x, initial_reserve_xy_y, 0, 0, 25);

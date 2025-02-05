@@ -48,6 +48,10 @@ module warpgate::swap_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
         let input_x = 2 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
         let bob_suppose_lp_balance = math::sqrt(((initial_reserve_x as u128) * (initial_reserve_y as u128))) - MINIMUM_LIQUIDITY;
@@ -143,6 +147,10 @@ module warpgate::swap_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
         let input_x = 2 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
         if(swap_utils::sort_token_type<TestWARP, TestBUSD>()){
@@ -243,6 +251,10 @@ module warpgate::swap_test {
         let initial_reserve_x = MAX_U64 / pow(10, 4);
         let initial_reserve_y = MAX_U64 / pow(10, 4);
         let input_x = pow(10, 9) * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -284,6 +296,10 @@ module warpgate::swap_test {
         let initial_reserve_x = 100 * pow(10, 8);
         let initial_reserve_y = 200 * pow(10, 8);
         let input_x = 10000 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -315,6 +331,10 @@ module warpgate::swap_test {
         let initial_reserve_x = 5 * pow(10, 8);
         let initial_reserve_y = 10 * pow(10, 8);
         let input_x = 2 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -357,7 +377,10 @@ module warpgate::swap_test {
         let initial_reserve_y = 10 * pow(10, 8);
         let output_y = 166319299;
         let input_x_max = 1 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
         let bob_suppose_lp_balance = math::sqrt(((initial_reserve_x as u128) * (initial_reserve_y as u128))) - MINIMUM_LIQUIDITY;
@@ -441,7 +464,10 @@ module warpgate::swap_test {
         let initial_reserve_y = 200 * pow(10, 8);
         let output_y = 1000 * pow(10, 8);
         let input_x_max = 1000 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -472,7 +498,10 @@ module warpgate::swap_test {
         let initial_reserve_x = 50 * pow(10, 8);
         let initial_reserve_y = 100 * pow(10, 8);
         let output_y = 166319299;
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -504,7 +533,10 @@ module warpgate::swap_test {
         let initial_reserve_y = 10 * pow(10, 8);
         let output_y = 166319299;
         // let input_x_max = 1 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
         let bob_suppose_lp_balance = math::sqrt(((initial_reserve_x as u128) * (initial_reserve_y as u128))) - MINIMUM_LIQUIDITY;
@@ -601,7 +633,10 @@ module warpgate::swap_test {
         let initial_reserve_y = 10 * pow(10, 8);
         let output_y = 166319299;
         // let input_x_max = 1 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
         let bob_suppose_lp_balance = math::sqrt(((initial_reserve_x as u128) * (initial_reserve_y as u128))) - MINIMUM_LIQUIDITY;
@@ -698,7 +733,10 @@ module warpgate::swap_test {
         let initial_reserve_y = 10 * pow(10, 8);
         let output_y = 166319299;
         // let input_x_max = 1 * pow(10, 8);
-
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);
 
@@ -742,6 +780,10 @@ module warpgate::swap_test {
         let output_y = 166319299;
         let output_x = 166319299;
         // let input_x_max = 1 * pow(10, 8);
+        let mm_fee_add = swap::mm_fee_to();
+        let mm_fee_signer = account::create_account_for_test(mm_fee_add);
+        coin::register<TestWARP>(&mm_fee_signer);
+        coin::register<TestBUSD>(&mm_fee_signer);
 
         // bob provider liquidity for 5:10 CAKE-BUSD
         router::add_liquidity<TestWARP, TestBUSD>(bob, initial_reserve_x, initial_reserve_y, 0, 0, 25);

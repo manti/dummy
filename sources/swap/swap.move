@@ -321,7 +321,10 @@ module warpgate::swap {
         sender: &signer,
         amount_x: u64,
         amount_y: u64
-    ): (u64, u64, u64) acquires TokenPairReserve, TokenPairMetadata, PairEventHolder {
+    ): (u64, u64, u64) acquires TokenPairReserve, TokenPairMetadata, PairEventHolder, SwapInfo {
+        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
+        assert!(coin::is_account_registered<X>(swap_info.mm_fee_to), 
+            ERROR_FEE_TO_NOT_REGISTERED);
         let (a_x, a_y, coin_lp, fee_amount, coin_left_x, coin_left_y) = add_liquidity_direct(coin::withdraw<X>(sender, amount_x), coin::withdraw<Y>(sender, amount_y));
         let sender_addr = signer::address_of(sender);
         let lp_amount = coin::value(&coin_lp);
