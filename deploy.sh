@@ -20,7 +20,7 @@ aptos init --network testnet --private-key "$PRIVATE_KEY" --assume-yes
 # Task 3: Create and fund resource account
 echo "Creating and funding resource account..."
 aptos move run --function-id '0x1::resource_account::create_resource_account_and_fund' \
-    --args "string:pancake" "hex:$PUBLIC_KEY" 'u64:10000000' --assume-yes
+    --args "string:warpgate" "hex:$PUBLIC_KEY" 'u64:10000000' --assume-yes
 
 # Task 4: Derive resource account address
 echo "Deriving resource account address..."
@@ -33,6 +33,7 @@ echo "Resource Account: $RESOURCE_ACCOUNT"
 echo "Updating move.toml..."
 sed -i.bak -e "s|^dev = .*|dev = \"$PUBLIC_KEY\"|" \
     -e "s|^default_admin = .*|default_admin = \"$PUBLIC_KEY\"|" \
+    -e "s|^mmfee = .*|mmfee = \"$PUBLIC_KEY\"|" \
     -e "s|^warpgate = .*|warpgate = \"0x$RESOURCE_ACCOUNT\"|" move.toml
 
 # Update .aptos/config.yaml
