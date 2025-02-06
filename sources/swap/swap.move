@@ -892,10 +892,9 @@ module warpgate::swap {
             coin::register<Y>(sender);
         };
     }
-
-    public fun is_mm_fee_tokens_registered<X, Y>(): bool acquires SwapInfo {
-        let swap_info = borrow_global<SwapInfo>(RESOURCE_ACCOUNT);
-        coin::is_account_registered<X>(swap_info.mm_fee_to) && coin::is_account_registered<Y>(swap_info.mm_fee_to)
+    #[view]
+    public fun is_mm_fee_tokens_registered<X, Y>(mm_fee_to: address): bool {
+        coin::is_account_registered<X>(mm_fee_to) && coin::is_account_registered<Y>(mm_fee_to)
     }
 
     #[test_only]
