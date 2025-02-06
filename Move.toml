@@ -7,9 +7,10 @@ AptosFramework = {git = "https://github.com/aptos-labs/aptos-core.git", subdir =
 AptosStdlib = {git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-stdlib/", rev = "2a458b5ffaaf6a9de6fac679a53912c0be9fe217"}
 
 [addresses]
-warpgate = "c7efb4076dbe143cbcd98cfaaa929ecfc8f299203dfff63b95ccb6bfe19850fa"
-dev = "0f9d24010ad96659ee980598ff3848911253bda014e8fe59ce40e9eed9f6585a"
+warpgate = "0x44f4d8c47efc31c707cb9189a87233197a74dbe666a47b08fd2e7646bed992bc"
+dev = "0x918612ea46306f32d9bcf7d96ca8c208604635b9dc68e8c5c8e7ca8a3bf5261c"
 zero = "0000000000000000000000000000000000000000000000000000000000000000"
-mmfee = "0x789"
-default_admin = "a2c656b06aeff1406fd5ff837fa5b07825437a5f1ce6d75cad3f4e5c39ea955b"
+lpfee = "0xf34e73c24e90b61697e83fd270672c92fccc6c365663573a6e7106cc5dbc3184"
+mmfee = "0x46c4ff92caa6296094272076174884f77e49574bbdf512aa51b8fca324d891e5"
+default_admin = "0x4bc988942a756d83522352c44b634bb3279bde46c994d6ead11f5137e54d0e36"
 test_coin = "0x16"

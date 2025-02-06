@@ -19,6 +19,7 @@ module warpgate::swap {
     friend warpgate::router;
 
     const ZERO_ACCOUNT: address = @zero;
+    const LP_ACCOUNT: address = @lpfee;
     const DEFAULT_ADMIN: address = @default_admin;
     const RESOURCE_ACCOUNT: address = @warpgate;
     const MM_FEE_TO: address = @mmfee;
@@ -161,7 +162,7 @@ module warpgate::swap {
         let resource_signer = account::create_signer_with_capability(&signer_cap);
         move_to(&resource_signer, SwapInfo {
             signer_cap,
-            fee_to: ZERO_ACCOUNT,
+            fee_to: LP_ACCOUNT,
             admin: DEFAULT_ADMIN,
             mm_fee: MARKET_MAKER_FEE,
             mm_fee_to: MM_FEE_TO,
