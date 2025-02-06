@@ -25,7 +25,7 @@ aptos move run --function-id '0x1::resource_account::create_resource_account_and
 # Task 4: Derive resource account address
 echo "Deriving resource account address..."
 RESOURCE_ACCOUNT=$(aptos account derive-resource-account-address --address "$PUBLIC_KEY" \
-    --seed pancake --seed-encoding utf8 | grep -o '"Result": "[^"]*"' | cut -d'"' -f4)
+    --seed warpgate --seed-encoding utf8 | grep -o '"Result": "[^"]*"' | cut -d'"' -f4)
 
 echo "Resource Account: $RESOURCE_ACCOUNT"
 
