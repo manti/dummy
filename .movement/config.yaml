@@ -1,0 +1,8 @@
+---
+profiles:
+  default:
+    network: Custom
+    private_key: "0xcc9a3e4a3a394b43ca2200c2cfeac5660910cd18a21de623e0b0048145410016"
+    public_key: "0x7ff350d18f9215fcf5fb33376b8c5431aedfb9afc942ae55667dc72de2e3506c"
+    account: 407cf3b5069185a5d1831c8f6b817f9ea7e93696cac92c9210abedcec49693a8
+    rest_url: "https://mainnet.movementnetwork.xyz/v1"

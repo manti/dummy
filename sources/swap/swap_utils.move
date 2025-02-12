@@ -24,7 +24,7 @@ module warpgate::swap_utils {
         assert!(amount_in > 0, ERROR_INSUFFICIENT_INPUT_AMOUNT);
         assert!(reserve_in > 0 && reserve_out > 0, ERROR_INSUFFICIENT_LIQUIDITY);
 
-        let amount_in_with_fee = (amount_in as u128) * (10000u128 - (swap_fee as u128));
+        let amount_in_with_fee = ((amount_in as u128) * (10000u128 - (swap_fee as u128)));
         let numerator = amount_in_with_fee * (reserve_out as u128);
         let denominator = (reserve_in as u128) * 10000u128 + amount_in_with_fee;
         ((numerator / denominator) as u64)

@@ -853,7 +853,7 @@ module warpgate::swap {
     /// Deduct market maker fee from input token before the swap
     fun deduct_market_maker_fee<T>(sender: &signer, amount_in: u64): (coin::Coin<T>, u64) acquires SwapInfo {
         let swap_info = borrow_global_mut<SwapInfo>(RESOURCE_ACCOUNT);
-        let fee_amount = ((amount_in as u128) * swap_info.mm_fee / FEE_DENOMINATOR) as u64;
+        let fee_amount: u64 = (((amount_in as u128) * swap_info.mm_fee / FEE_DENOMINATOR) as u64);
         let amount_after_fee = amount_in - fee_amount;
         let fee_coin = coin::withdraw<T>(sender, fee_amount);
         let swap_coin = coin::withdraw<T>(sender, amount_after_fee);
