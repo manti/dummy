@@ -9,7 +9,7 @@ AptosStdlib = {git = "https://github.com/aptos-labs/aptos-core.git", subdir = "a
 
 
 [addresses]
-warpgate = "0x327aab82300f1f7806de9dee47d0f8f553b0c8e0acb2203f38f4e3f4d97d099a"
+warpgate = "0x44f4d8c47efc31c707cb9189a87233197a74dbe666a47b08fd2e7646bed992bc"
 dev = "0x539b8bbb3a635408cfa67af0f177dbd685d2e006c7b8d189302c6133c4813ee5"
 zero = "0000000000000000000000000000000000000000000000000000000000000000"
 lpfee = "0xec46cf8d4741ab4707bcd683d9eb31e32bd6b5c6cb72e507835e1e3dcffbb525"
